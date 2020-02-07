@@ -25,7 +25,7 @@ var drawScore = function() {
 };
 
 var gameOver = function() {
-	clearInterval(intervalId);
+	playing = false;
 	ctx.font = "60px Consolas";
 	ctx.fillStyle = "Black";
 	ctx.textAlign = "center";
@@ -78,8 +78,16 @@ var Snake = function() {
 };
 
 Snake.prototype.draw = function() {
-	for (var i = 0; i < this.segments.length; i++) {
-		this.segments[i].drawSquare("Blue");
+	this.segments[0].drawSquare("Cyan");
+	var isEvenSegment = false;
+
+	for (var i = 1; i < this.segments.length; i++) {
+		if (isEvenSegment) {
+			this.segments[i].drawSquare("Blue");
+		} else {
+			this.segments[i].drawSquare("Yellow");
+		}
+		isEvenSegment = !isEvenSegment;
 	}
 };
 
@@ -108,7 +116,8 @@ Snake.prototype.move = function() {
 
 	if (newHead.equal(apple.position)) {
 		score++;
-		apple.move();
+		animationTime -= 5;
+		apple.move(this.segments);
 	} else {
 		this.segments.pop();
 	}
@@ -117,8 +126,8 @@ Snake.prototype.move = function() {
 Snake.prototype.checkCollision = function(head) {
 	var leftCollision = (head.col === 0);
 	var topCollision = (head.row === 0)
-	var rightCollision = (head.col === widthInBlocks -1);
-	var bottomCollision = (head.row === heightInBlocks -1);
+	var rightCollision = (head.col === widthInBlocks - 1);
+	var bottomCollision = (head.row === heightInBlocks - 1);
 
 	var wallCollision = leftCollision || topCollision || rightCollision || bottomCollision;
 
@@ -154,23 +163,39 @@ Apple.prototype.draw = function() {
 	this.position.drawCircle("LimeGreen");
 };
 
-Apple.prototype.move = function() {
+Apple.prototype.move = function(occupiedBlocks) {
 	var randomCol = Math.floor(Math.random() * (widthInBlocks - 2)) + 1;
 	var randomRow = Math.floor(Math.random() * (heightInBlocks - 2)) + 1;
 	this.position = new Block(randomCol, randomRow);
+
+	for(var i = 0; i < occupiedBlocks.length; i++) {
+		if (this.position.equal(occupiedBlocks[i])) {
+			this.move(occupiedBlocks);
+			return;
+		}
+	}
 };
 
 var snake = new Snake();
 var apple = new Apple();
 
-var intervalId = setInterval(function() {
+var playing = true;
+var animationTime = 100;
+
+var gameLoop = function() {
 	ctx.clearRect(0, 0, width, height);
 	drawScore();
 	snake.move();
 	snake.draw();
 	apple.draw();
 	drawBorder();
-}, 100);
+
+	if (playing) {
+		setTimeout(gameLoop, animationTime);
+	}
+};
+
+gameLoop();
 
 var directions = {
 	37: "left",
